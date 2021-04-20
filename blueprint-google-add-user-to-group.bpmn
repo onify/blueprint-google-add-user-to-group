@@ -2,7 +2,7 @@
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" id="Definitions_0sdny8d" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="4.5.0">
   <bpmn:collaboration id="Collaboration_1ifefbx">
     <bpmn:participant id="Participant_14lma39" name="Authenticate with Google" processRef="blueprint-google-api-auth" />
-    <bpmn:participant id="Participant_1msogt3" name="API request" processRef="Process_105x047" />
+    <bpmn:participant id="Participant_1msogt3" name="Add user to group" processRef="Process_105x047" />
     <bpmn:messageFlow id="Flow_0n6jo2s" sourceRef="token" targetRef="Event_0gzw3i8" />
     <bpmn:messageFlow id="Flow_13zdcfv" sourceRef="Event_1itjwhb" targetRef="Event_0mhhxhb" />
   </bpmn:collaboration>
@@ -109,13 +109,14 @@ next (null, signedJWT);</bpmn:script>
       <bpmn:messageEventDefinition id="MessageEventDefinition_0fvgl0x" messageRef="Message_1ys8q9m" />
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="Flow_1dofwjv" sourceRef="Event_0gzw3i8" targetRef="Activity_1ryf25s" />
-    <bpmn:sequenceFlow id="Flow_0okjq0g" sourceRef="Activity_1tuqcu4" targetRef="Event_1itjwhb" />
-    <bpmn:sequenceFlow id="Flow_075nwxm" sourceRef="Activity_1ryf25s" targetRef="Activity_1tuqcu4" />
-    <bpmn:serviceTask id="Activity_1tuqcu4" name="Add user to group">
+    <bpmn:sequenceFlow id="Flow_0okjq0g" sourceRef="addUserToGroup" targetRef="Event_1itjwhb" />
+    <bpmn:sequenceFlow id="Flow_075nwxm" sourceRef="Activity_1ryf25s" targetRef="addUserToGroup" />
+    <bpmn:serviceTask id="addUserToGroup" name="Add user to group">
       <bpmn:extensionElements>
         <camunda:connector>
           <camunda:inputOutput>
-            <camunda:inputParameter name="payload">${environment.output.inputVars.user}</camunda:inputParameter>
+            <camunda:inputParameter name="throwHttpErrors">${false}</camunda:inputParameter>
+            <camunda:inputParameter name="json">${environment.output.inputVars.user}</camunda:inputParameter>
             <camunda:inputParameter name="method">POST</camunda:inputParameter>
             <camunda:inputParameter name="responseType">json</camunda:inputParameter>
             <camunda:inputParameter name="headers">
@@ -127,11 +128,17 @@ next (null, signedJWT);</bpmn:script>
           </camunda:inputOutput>
           <camunda:connectorId>httpRequest</camunda:connectorId>
         </camunda:connector>
+        <camunda:inputOutput>
+          <camunda:outputParameter name="debugLog">
+            <camunda:script scriptFormat="js">console.log(content.output.body);
+next();</camunda:script>
+          </camunda:outputParameter>
+        </camunda:inputOutput>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_075nwxm</bpmn:incoming>
       <bpmn:outgoing>Flow_0okjq0g</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:scriptTask id="Activity_1ryf25s" name="Set input parameters" scriptFormat="js" camunda:resultVariable="inputVars">
+    <bpmn:scriptTask id="Activity_1ryf25s" name="Set user and group parameters" scriptFormat="js" camunda:resultVariable="inputVars">
       <bpmn:incoming>Flow_1dofwjv</bpmn:incoming>
       <bpmn:outgoing>Flow_075nwxm</bpmn:outgoing>
       <bpmn:script>next(null, {
@@ -140,12 +147,20 @@ next (null, signedJWT);</bpmn:script>
   },
   user: {
     email: 'robert@onify.co',
-    role: 'MEMBER',
+    role: 'OWNER',
     type: 'USER',
     delivery_settings: 'ALL_MAIL'
   }
 });</bpmn:script>
     </bpmn:scriptTask>
+    <bpmn:textAnnotation id="TextAnnotation_1h43bgs">
+      <bpmn:text>Update with your own parameters (eg form data)</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_1np2qu0" sourceRef="Activity_1ryf25s" targetRef="TextAnnotation_1h43bgs" />
+    <bpmn:textAnnotation id="TextAnnotation_0ig0a95">
+      <bpmn:text>Adds user to group and write result in log</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_1b8l6qg" sourceRef="addUserToGroup" targetRef="TextAnnotation_0ig0a95" />
   </bpmn:process>
   <bpmn:message id="Message_1ys8q9m" name="Message_22ekjlm" />
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
@@ -219,7 +234,13 @@ next (null, signedJWT);</bpmn:script>
         <di:waypoint x="728" y="160" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="Participant_1msogt3_di" bpmnElement="Participant_1msogt3" isHorizontal="true">
-        <dc:Bounds x="161" y="430" width="850" height="250" />
+        <dc:Bounds x="161" y="430" width="850" height="270" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="TextAnnotation_1h43bgs_di" bpmnElement="TextAnnotation_1h43bgs">
+        <dc:Bounds x="420" y="630" width="170" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="TextAnnotation_0ig0a95_di" bpmnElement="TextAnnotation_0ig0a95">
+        <dc:Bounds x="690" y="629" width="148" height="42" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_075nwxm_di" bpmnElement="Flow_075nwxm">
         <di:waypoint x="430" y="560" />
@@ -239,12 +260,20 @@ next (null, signedJWT);</bpmn:script>
       <bpmndi:BPMNShape id="Event_0ph36oh_di" bpmnElement="Event_1itjwhb">
         <dc:Bounds x="802" y="542" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1tuqcu4_di" bpmnElement="Activity_1tuqcu4" bioc:stroke="black" bioc:fill="white">
+      <bpmndi:BPMNShape id="Activity_1tuqcu4_di" bpmnElement="addUserToGroup" bioc:stroke="black" bioc:fill="white">
         <dc:Bounds x="590" y="520" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_0joikze_di" bpmnElement="Activity_1ryf25s">
         <dc:Bounds x="330" y="520" width="100" height="80" />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Association_1np2qu0_di" bpmnElement="Association_1np2qu0">
+        <di:waypoint x="422" y="600" />
+        <di:waypoint x="454" y="630" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Association_1b8l6qg_di" bpmnElement="Association_1b8l6qg">
+        <di:waypoint x="685" y="598" />
+        <di:waypoint x="722" y="629" />
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0n6jo2s_di" bpmnElement="Flow_0n6jo2s">
         <di:waypoint x="650" y="287" />
         <di:waypoint x="650" y="480" />
