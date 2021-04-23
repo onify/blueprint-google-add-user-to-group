@@ -1,113 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" id="Definitions_0sdny8d" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="4.5.0">
   <bpmn:collaboration id="Collaboration_1ifefbx">
-    <bpmn:participant id="Participant_14lma39" name="Authenticate with Google" processRef="blueprint-google-api-auth" />
-    <bpmn:participant id="Participant_1msogt3" name="Add user to group" processRef="Process_105x047" />
-    <bpmn:messageFlow id="Flow_0n6jo2s" sourceRef="token" targetRef="Event_0gzw3i8" />
+    <bpmn:participant id="Participant_1msogt3" name="Add user to group" processRef="add" />
+    <bpmn:participant id="Participant_14lma39" name="Authenticate with Google" processRef="auth" />
     <bpmn:messageFlow id="Flow_13zdcfv" sourceRef="Event_1itjwhb" targetRef="Event_0mhhxhb" />
+    <bpmn:messageFlow id="Flow_0n6jo2s" sourceRef="token" targetRef="Event_0gzw3i8" />
   </bpmn:collaboration>
-  <bpmn:process id="blueprint-google-api-auth" name="Onify Blueprint: Authenticate against Google API" isExecutable="true">
-    <bpmn:laneSet id="LaneSet_11fup2p" />
-    <bpmn:startEvent id="start" name="Start">
-      <bpmn:outgoing>Flow_1if56ls</bpmn:outgoing>
-    </bpmn:startEvent>
-    <bpmn:scriptTask id="jwt" name="Generate signed JWT" scriptFormat="javascript" camunda:resultVariable="signedJWT">
-      <bpmn:incoming>Flow_0riv0em</bpmn:incoming>
-      <bpmn:outgoing>Flow_1oaj2n2</bpmn:outgoing>
-      <bpmn:script>var body = {
-    scope: 'https://www.googleapis.com/auth/admin.directory.group'
-};
-
-var claimSet = {
-    issuer: environment.output.googleSettings._google_serviceaccount_email,
-    subject: environment.output.googleSettings._google_serviceaccount_impersonate_email,
-    audience: 'https://oauth2.googleapis.com/token',
-    expiresIn: 60*60,
-    algorithm : 'RS256'
-};
-
-var pkey = environment.output.googleSettings._google_serviceaccount_privatekey.replace(/\\n/g, '\n');
-var signedJWT = jwt.sign(body,pkey,claimSet);
-next (null, signedJWT);</bpmn:script>
-    </bpmn:scriptTask>
-    <bpmn:serviceTask id="token" name="Generate Google access token">
-      <bpmn:extensionElements>
-        <camunda:connector>
-          <camunda:inputOutput>
-            <camunda:inputParameter name="responseType">json</camunda:inputParameter>
-            <camunda:inputParameter name="method">POST</camunda:inputParameter>
-            <camunda:inputParameter name="body">grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&amp;assertion=${environment.output.signedJWT}</camunda:inputParameter>
-            <camunda:inputParameter name="headers">
-              <camunda:map>
-                <camunda:entry key="Content-Type">application/x-www-form-urlencoded</camunda:entry>
-              </camunda:map>
-            </camunda:inputParameter>
-            <camunda:inputParameter name="url">https://oauth2.googleapis.com/token</camunda:inputParameter>
-            <camunda:outputParameter name="body">${body}</camunda:outputParameter>
-          </camunda:inputOutput>
-          <camunda:connectorId>httpRequest</camunda:connectorId>
-        </camunda:connector>
-        <camunda:inputOutput>
-          <camunda:outputParameter name="accessToken">${content.output.body.access_token}</camunda:outputParameter>
-        </camunda:inputOutput>
-      </bpmn:extensionElements>
-      <bpmn:incoming>Flow_1oaj2n2</bpmn:incoming>
-      <bpmn:outgoing>Flow_0qgw1k4</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:serviceTask id="settings" name="Get Google settings">
-      <bpmn:extensionElements>
-        <camunda:connector>
-          <camunda:inputOutput>
-            <camunda:inputParameter name="query">
-              <camunda:map>
-                <camunda:entry key="tag">google</camunda:entry>
-              </camunda:map>
-            </camunda:inputParameter>
-            <camunda:inputParameter name="url">/my/config/settings</camunda:inputParameter>
-          </camunda:inputOutput>
-          <camunda:connectorId>onifyApiRequest</camunda:connectorId>
-        </camunda:connector>
-        <camunda:inputOutput>
-          <camunda:outputParameter name="googleSettings">${content.output.body}</camunda:outputParameter>
-        </camunda:inputOutput>
-      </bpmn:extensionElements>
-      <bpmn:incoming>Flow_1if56ls</bpmn:incoming>
-      <bpmn:outgoing>Flow_0riv0em</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:endEvent id="end" name="End">
-      <bpmn:incoming>Flow_1v72x7c</bpmn:incoming>
-    </bpmn:endEvent>
-    <bpmn:sequenceFlow id="Flow_0riv0em" sourceRef="settings" targetRef="jwt" />
-    <bpmn:sequenceFlow id="Flow_1oaj2n2" sourceRef="jwt" targetRef="token" />
-    <bpmn:sequenceFlow id="Flow_1if56ls" sourceRef="start" targetRef="settings" />
-    <bpmn:sequenceFlow id="Flow_1v72x7c" sourceRef="Event_0mhhxhb" targetRef="end" />
-    <bpmn:intermediateCatchEvent id="Event_0mhhxhb">
-      <bpmn:incoming>Flow_0qgw1k4</bpmn:incoming>
-      <bpmn:outgoing>Flow_1v72x7c</bpmn:outgoing>
-      <bpmn:messageEventDefinition id="MessageEventDefinition_00l6tss" messageRef="Message_1ys8q9m" />
-    </bpmn:intermediateCatchEvent>
-    <bpmn:sequenceFlow id="Flow_0qgw1k4" sourceRef="token" targetRef="Event_0mhhxhb" />
-    <bpmn:textAnnotation id="TextAnnotation_09b86tr">
-      <bpmn:text>Get Google service account settings from Onify API</bpmn:text>
-    </bpmn:textAnnotation>
-    <bpmn:textAnnotation id="TextAnnotation_0j8gdcc">
-      <bpmn:text>Generate claim and generate JWT</bpmn:text>
-    </bpmn:textAnnotation>
-    <bpmn:textAnnotation id="TextAnnotation_14qrud4">
-      <bpmn:text>Generate access token with ttl 60 min</bpmn:text>
-    </bpmn:textAnnotation>
-    <bpmn:association id="Association_03q03nv" sourceRef="settings" targetRef="TextAnnotation_09b86tr" />
-    <bpmn:association id="Association_0pp1ogn" sourceRef="jwt" targetRef="TextAnnotation_0j8gdcc" />
-    <bpmn:association id="Association_1tpuxgn" sourceRef="token" targetRef="TextAnnotation_14qrud4" />
-  </bpmn:process>
-  <bpmn:process id="Process_105x047" isExecutable="false">
+  <bpmn:process id="add" isExecutable="false">
     <bpmn:startEvent id="Event_0gzw3i8">
       <bpmn:outgoing>Flow_1dofwjv</bpmn:outgoing>
     </bpmn:startEvent>
-    <bpmn:endEvent id="Event_1itjwhb">
-      <bpmn:incoming>Flow_0okjq0g</bpmn:incoming>
-      <bpmn:messageEventDefinition id="MessageEventDefinition_0fvgl0x" messageRef="Message_1ys8q9m" />
-    </bpmn:endEvent>
     <bpmn:sequenceFlow id="Flow_1dofwjv" sourceRef="Event_0gzw3i8" targetRef="Activity_1ryf25s" />
     <bpmn:sequenceFlow id="Flow_0okjq0g" sourceRef="addUserToGroup" targetRef="Event_1itjwhb" />
     <bpmn:sequenceFlow id="Flow_075nwxm" sourceRef="Activity_1ryf25s" targetRef="addUserToGroup" />
@@ -143,16 +45,20 @@ next();</camunda:script>
       <bpmn:outgoing>Flow_075nwxm</bpmn:outgoing>
       <bpmn:script>next(null, {
   group: {
-    groupKey: '03j2qqm31a6a03u'
+    groupKey: 'aaabbbccc'
   },
   user: {
-    email: 'robert@onify.co',
-    role: 'OWNER',
+    email: 'user@acme.com',
+    role: 'MEMBER',
     type: 'USER',
     delivery_settings: 'ALL_MAIL'
   }
 });</bpmn:script>
     </bpmn:scriptTask>
+    <bpmn:endEvent id="Event_1itjwhb">
+      <bpmn:incoming>Flow_0okjq0g</bpmn:incoming>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_0fvgl0x" messageRef="Message_1ys8q9m" />
+    </bpmn:endEvent>
     <bpmn:textAnnotation id="TextAnnotation_1h43bgs">
       <bpmn:text>Update with your own parameters (eg form data)</bpmn:text>
     </bpmn:textAnnotation>
@@ -163,6 +69,100 @@ next();</camunda:script>
     <bpmn:association id="Association_1b8l6qg" sourceRef="addUserToGroup" targetRef="TextAnnotation_0ig0a95" />
   </bpmn:process>
   <bpmn:message id="Message_1ys8q9m" name="Message_22ekjlm" />
+  <bpmn:process id="auth" name="" isExecutable="true">
+    <bpmn:laneSet id="LaneSet_11fup2p" />
+    <bpmn:intermediateCatchEvent id="Event_0mhhxhb">
+      <bpmn:incoming>Flow_0qgw1k4</bpmn:incoming>
+      <bpmn:outgoing>Flow_1v72x7c</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_00l6tss" messageRef="Message_1ys8q9m" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:endEvent id="end" name="End">
+      <bpmn:incoming>Flow_1v72x7c</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="settings" name="Get Google settings">
+      <bpmn:extensionElements>
+        <camunda:connector>
+          <camunda:inputOutput>
+            <camunda:inputParameter name="query">
+              <camunda:map>
+                <camunda:entry key="tag">google</camunda:entry>
+              </camunda:map>
+            </camunda:inputParameter>
+            <camunda:inputParameter name="url">/my/config/settings</camunda:inputParameter>
+          </camunda:inputOutput>
+          <camunda:connectorId>onifyApiRequest</camunda:connectorId>
+        </camunda:connector>
+        <camunda:inputOutput>
+          <camunda:outputParameter name="googleSettings">${content.output.body}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1if56ls</bpmn:incoming>
+      <bpmn:outgoing>Flow_0riv0em</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="token" name="Generate Google access token">
+      <bpmn:extensionElements>
+        <camunda:connector>
+          <camunda:inputOutput>
+            <camunda:inputParameter name="responseType">json</camunda:inputParameter>
+            <camunda:inputParameter name="method">POST</camunda:inputParameter>
+            <camunda:inputParameter name="body">grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&amp;assertion=${environment.output.signedJWT}</camunda:inputParameter>
+            <camunda:inputParameter name="headers">
+              <camunda:map>
+                <camunda:entry key="Content-Type">application/x-www-form-urlencoded</camunda:entry>
+              </camunda:map>
+            </camunda:inputParameter>
+            <camunda:inputParameter name="url">https://oauth2.googleapis.com/token</camunda:inputParameter>
+            <camunda:outputParameter name="body">${body}</camunda:outputParameter>
+          </camunda:inputOutput>
+          <camunda:connectorId>httpRequest</camunda:connectorId>
+        </camunda:connector>
+        <camunda:inputOutput>
+          <camunda:outputParameter name="accessToken">${content.output.body.access_token}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1oaj2n2</bpmn:incoming>
+      <bpmn:outgoing>Flow_0qgw1k4</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:scriptTask id="jwt" name="Generate signed JWT" scriptFormat="javascript" camunda:resultVariable="signedJWT">
+      <bpmn:incoming>Flow_0riv0em</bpmn:incoming>
+      <bpmn:outgoing>Flow_1oaj2n2</bpmn:outgoing>
+      <bpmn:script>var body = {
+    scope: 'https://www.googleapis.com/auth/admin.directory.group'
+};
+
+var claimSet = {
+    issuer: environment.output.googleSettings._google_serviceaccount_email,
+    subject: environment.output.googleSettings._google_serviceaccount_impersonate_email,
+    audience: 'https://oauth2.googleapis.com/token',
+    expiresIn: 60*60,
+    algorithm : 'RS256'
+};
+
+var pkey = environment.output.googleSettings._google_serviceaccount_privatekey.replace(/\\n/g, '\n');
+var signedJWT = jwt.sign(body,pkey,claimSet);
+next (null, signedJWT);</bpmn:script>
+    </bpmn:scriptTask>
+    <bpmn:startEvent id="start" name="Start">
+      <bpmn:outgoing>Flow_1if56ls</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_0riv0em" sourceRef="settings" targetRef="jwt" />
+    <bpmn:sequenceFlow id="Flow_1oaj2n2" sourceRef="jwt" targetRef="token" />
+    <bpmn:sequenceFlow id="Flow_1if56ls" sourceRef="start" targetRef="settings" />
+    <bpmn:sequenceFlow id="Flow_1v72x7c" sourceRef="Event_0mhhxhb" targetRef="end" />
+    <bpmn:sequenceFlow id="Flow_0qgw1k4" sourceRef="token" targetRef="Event_0mhhxhb" />
+    <bpmn:textAnnotation id="TextAnnotation_14qrud4">
+      <bpmn:text>Generate access token with ttl 60 min</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:textAnnotation id="TextAnnotation_0j8gdcc">
+      <bpmn:text>Generate claim and generate JWT</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:textAnnotation id="TextAnnotation_09b86tr">
+      <bpmn:text>Get Google service account settings from Onify API</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_03q03nv" sourceRef="settings" targetRef="TextAnnotation_09b86tr" />
+    <bpmn:association id="Association_1tpuxgn" sourceRef="token" targetRef="TextAnnotation_14qrud4" />
+    <bpmn:association id="Association_0pp1ogn" sourceRef="jwt" targetRef="TextAnnotation_0j8gdcc" />
+  </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1ifefbx">
       <bpmndi:BPMNShape id="Participant_14lma39_di" bpmnElement="Participant_14lma39" isHorizontal="true">
@@ -191,7 +191,7 @@ next();</camunda:script>
       <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="start">
         <dc:Bounds x="212" y="229" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="218" y="272" width="24" height="14" />
+          <dc:Bounds x="218" y="272" width="25" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_19kuezu_di" bpmnElement="jwt">
@@ -236,12 +236,6 @@ next();</camunda:script>
       <bpmndi:BPMNShape id="Participant_1msogt3_di" bpmnElement="Participant_1msogt3" isHorizontal="true">
         <dc:Bounds x="161" y="430" width="850" height="270" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="TextAnnotation_1h43bgs_di" bpmnElement="TextAnnotation_1h43bgs">
-        <dc:Bounds x="420" y="630" width="170" height="40" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="TextAnnotation_0ig0a95_di" bpmnElement="TextAnnotation_0ig0a95">
-        <dc:Bounds x="690" y="629" width="148" height="42" />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_075nwxm_di" bpmnElement="Flow_075nwxm">
         <di:waypoint x="430" y="560" />
         <di:waypoint x="590" y="560" />
@@ -257,14 +251,20 @@ next();</camunda:script>
       <bpmndi:BPMNShape id="Event_0gzw3i8_di" bpmnElement="Event_0gzw3i8">
         <dc:Bounds x="242" y="542" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_0ph36oh_di" bpmnElement="Event_1itjwhb">
-        <dc:Bounds x="802" y="542" width="36" height="36" />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1tuqcu4_di" bpmnElement="addUserToGroup" bioc:stroke="black" bioc:fill="white">
         <dc:Bounds x="590" y="520" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_0joikze_di" bpmnElement="Activity_1ryf25s">
         <dc:Bounds x="330" y="520" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0ph36oh_di" bpmnElement="Event_1itjwhb">
+        <dc:Bounds x="802" y="542" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="TextAnnotation_1h43bgs_di" bpmnElement="TextAnnotation_1h43bgs">
+        <dc:Bounds x="420" y="630" width="170" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="TextAnnotation_0ig0a95_di" bpmnElement="TextAnnotation_0ig0a95">
+        <dc:Bounds x="690" y="629" width="148" height="42" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Association_1np2qu0_di" bpmnElement="Association_1np2qu0">
         <di:waypoint x="422" y="600" />

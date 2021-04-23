@@ -3,7 +3,7 @@
 
 # Onify Blueprint: Authenticate against Google API with service account
 
-This Blueprint shows how to authenticate with Google API using a service account. From there you can then access
+This Blueprint shows authenticates with Google API and then adds a user to a group. Please check [Google API docs (Method: members.insert)](https://developers.google.com/admin-sdk/directory/reference/rest/v1/members/insert) for more info. In this Blueprint we also show how to use swimlanes in BPMN to devide different processes.
 
 ![alt text](flow.png "Flow")
 
@@ -47,14 +47,30 @@ Add the following settings via `/admin/settings`.
 
 #### Configure
 
-* Modify the `scope` for the authentication request
-* Add your own API request in the end
+You need to update the `Set user and group parameters` task with your own configuration.
+This is the default config:
+
+```javascript
+next(null, {
+  group: {
+    groupKey: 'aaabbbccc'
+  },
+  user: {
+    email: 'user@acme.com',
+    role: 'MEMBER',
+    type: 'USER',
+    delivery_settings: 'ALL_MAIL'
+  }
+});
+```
+
+> NOTE: Read more about the REST API request in Google here: [Google API docs (Method: members.insert)](https://developers.google.com/admin-sdk/directory/reference/rest/v1/members/insert).
+
 
 #### Deploy
 
-1. Open `blueprint-google-api-auth.bpmn` in Camunda Modeler
-2. Customize the flow (optional)
-3. Click `Deploy current diagram` and follow the steps
+1. Open `blueprint-google-add-user-to-group.bpmn` in Camunda Modeler
+2. Click `Deploy current diagram` and follow the steps
 
 #### Run 
 
