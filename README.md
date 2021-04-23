@@ -1,7 +1,7 @@
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 ![Test suite](https://github.com/onify/blueprint-google-api-auth/workflows/Test%20suite/badge.svg)
 
-# Onify Blueprint: Authenticate against Google API with service account
+# Onify Blueprint: Add user to group in Google via Google API
 
 This Blueprint shows authenticates with Google API and then adds a user to a group. Please check [Google API docs (Method: members.insert)](https://developers.google.com/admin-sdk/directory/reference/rest/v1/members/insert) for more info. In this Blueprint we also show how to use swimlanes in BPMN to devide different processes.
 
