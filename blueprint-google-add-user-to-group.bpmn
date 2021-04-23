@@ -32,7 +32,7 @@
         </camunda:connector>
         <camunda:inputOutput>
           <camunda:outputParameter name="debugLog">
-            <camunda:script scriptFormat="js">console.log(content.output.body);
+            <camunda:script scriptFormat="js">console.log(content.output.body); // eslint-disable-line no-console
 next();</camunda:script>
           </camunda:outputParameter>
         </camunda:inputOutput>
