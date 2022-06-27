@@ -7,7 +7,7 @@
 
 This Blueprint shows authenticates with Google API and then adds a user to a group. Please check [Google API docs (Method: members.insert)](https://developers.google.com/admin-sdk/directory/reference/rest/v1/members/insert) for more info. In this Blueprint we also show how to use swimlanes in BPMN to devide different processes.
 
-![alt text](flow.png "Flow")
+![Onify Blueprint: Add user to group in Google via Google API](blueprint.jpg "Blueprint")
 
 ## Requirements
 
